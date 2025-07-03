@@ -9,6 +9,8 @@ if "courts" not in st.session_state:
     st.session_state.courts = {i: [] for i in range(1, st.session_state.num_courts + 1)}
 if "waitlist" not in st.session_state:
     st.session_state.waitlist = []
+if "lesson_court" not in st.session_state:
+    st.session_state.lesson_court = []
 
 st.title("KUBC 코트 Organizer")
 st.markdown("---")
@@ -39,16 +41,43 @@ for i in range(1, st.session_state.num_courts + 1):
     if players:
         st.markdown(f"<h4>{i}번 코트: {', '.join(players)}</h4>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<h4>{i}번 코트: </h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4>{i}번 코트:</h4>", unsafe_allow_html=True)
 
-    # Button to clear court
     if players and st.button(f"게임 끝내기", key=f"end_game_court_{i}"):
         st.session_state.players.update(st.session_state.courts[i])
         st.session_state.courts[i] = []
         st.success(f"{i}번 코트 게임 마무리 되었습니다.")
         st.rerun()
 
-# --- Create Waitlist Teams ---
+# --- Lesson Court ---
+st.markdown("---")
+lesson_players = st.session_state.lesson_court
+if lesson_players:
+    st.markdown(f"<h5>레슨 코트: {', '.join(lesson_players)}</h5>", unsafe_allow_html=True)
+else:
+    st.markdown(f"<h5>레슨 코트:</h5>", unsafe_allow_html=True)
+
+if not lesson_players:
+    selected_lesson = st.multiselect(
+        "레슨 코트에 배정할 인원을 선택해 주세요 (최대 3명)",
+        sorted(st.session_state.players),
+        max_selections=3,
+        key="lesson_select"
+    )
+    if st.button("레슨 코트 배정") and selected_lesson:
+        st.session_state.lesson_court = selected_lesson
+        for p in selected_lesson:
+            st.session_state.players.remove(p)
+        st.success(f"레슨 코트 배정 완료: {', '.join(selected_lesson)}")
+        st.rerun()
+else:
+    if st.button("레슨 종료"):
+        st.session_state.players.update(st.session_state.lesson_court)
+        st.session_state.lesson_court = []
+        st.success("레슨 코트가 초기화되었습니다.")
+        st.rerun()
+
+# --- Waitlist to Court Assignment ---
 st.markdown("---")
 st.subheader("\U0001F465 팀 꾸리기")
 wait_selected = st.multiselect(
@@ -78,7 +107,7 @@ if st.session_state.waitlist:
                     if st.button(f"{court_id}번 코트", key=f"assign_team_{idx}_court_{court_id}"):
                         st.session_state.courts[court_id] = team
                         st.session_state.waitlist.remove(team)
-                        st.success(f"{idx + 1}번 팀 {court_id}번 코트로 배정되었습니다.")
+                        st.success(f"{idx + 1}번 팀이 {court_id}번 코트로 배정되었습니다.")
                         st.rerun()
 else:
     st.write("대기중인 팀이 없습니다.")
@@ -86,15 +115,26 @@ else:
 # --- Player Pool ---
 st.markdown("---")
 st.subheader("Free 인원")
+name = st.text_input("명단에 추가")
+if st.button("추가") and name:
+    in_use = set(p for court in st.session_state.courts.values() for p in court)
+    in_waitlist = set(p for team in st.session_state.waitlist for p in team)
+    if name in st.session_state.players or name in in_use or name in in_waitlist:
+        st.warning("이미 존재하는 이름입니다.")
+    else:
+        st.session_state.players.add(name)
+        st.success(f"{name}님 명단에 추가되었습니다.")
+    st.rerun()
 
 # Remove player logic
 if st.session_state.players:
     removable_players = []
     in_use = set(p for court in st.session_state.courts.values() for p in court)
     in_waitlist = set(p for team in st.session_state.waitlist for p in team)
+    in_lesson = set(st.session_state.lesson_court)
 
     for p in sorted(st.session_state.players):
-        if p not in in_use and p not in in_waitlist:
+        if p not in in_use and p not in in_waitlist and p not in in_lesson:
             removable_players.append(p)
 
     for p in sorted(st.session_state.players):
@@ -109,15 +149,3 @@ if st.session_state.players:
                     st.rerun()
 else:
     st.write("명단에 사람이 없습니다.")
-
-
-name = st.text_input("명단에 추가")
-if st.button("추가") and name:
-    in_use = set(p for court in st.session_state.courts.values() for p in court)
-    in_waitlist = set(p for team in st.session_state.waitlist for p in team)
-    if name in st.session_state.players or name in in_use or name in in_waitlist:
-        st.warning("이미 존재하는 이름입니다.")
-    else:
-        st.session_state.players.add(name)
-        st.success(f"{name}님 명단에 추가되었습니다.")
-    st.rerun()
