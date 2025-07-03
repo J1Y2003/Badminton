@@ -53,29 +53,29 @@ for i in range(1, st.session_state.num_courts + 1):
 st.markdown("---")
 lesson_players = st.session_state.lesson_court
 if lesson_players:
-    st.markdown(f"<h5>레슨 코트: {', '.join(lesson_players)}</h5>", unsafe_allow_html=True)
-else:
     st.markdown(f"<h5>레슨 코트:</h5>", unsafe_allow_html=True)
-
-if not lesson_players:
-    selected_lesson = st.multiselect(
-        "레슨 코트에 배정할 인원을 선택해 주세요 (최대 3명)",
-        sorted(st.session_state.players),
-        max_selections=3,
-        key="lesson_select"
-    )
-    if st.button("레슨 코트 배정") and selected_lesson:
-        st.session_state.lesson_court = selected_lesson
-        for p in selected_lesson:
-            st.session_state.players.remove(p)
-        st.success(f"레슨 코트 배정 완료: {', '.join(selected_lesson)}")
-        st.rerun()
+    btn_cols = st.columns(len(lesson_players))
+    for idx, p in enumerate(lesson_players):
+        with btn_cols[idx]:
+            if st.button(f"{p} X", key=f"remove_lesson_{p}"):
+                st.session_state.lesson_court.remove(p)
+                st.session_state.players.add(p)
+                st.success(f"{p}님이 레슨 코트에서 제거되었습니다.")
+                st.rerun()
 else:
-    if st.button("레슨 종료"):
-        st.session_state.players.update(st.session_state.lesson_court)
-        st.session_state.lesson_court = []
-        st.success("레슨 코트가 초기화되었습니다.")
+    st.markdown(f"<h5>레슨 코트: 미사용</h5>", unsafe_allow_html=True)
+
+available_for_lesson = sorted(list(st.session_state.players - set(st.session_state.lesson_court)))
+selected_lesson = st.selectbox("레슨 코트에 추가할 인원 선택", ["선택 안 함"] + available_for_lesson, key="lesson_select")
+if selected_lesson != "선택 안 함":
+    if len(st.session_state.lesson_court) < 3:
+        st.session_state.lesson_court.append(selected_lesson)
+        st.session_state.players.remove(selected_lesson)
+        st.success(f"{selected_lesson}님이 레슨 코트에 추가되었습니다.")
         st.rerun()
+    else:
+        st.warning("레슨 코트는 최대 3명 이용 가능합니다.")
+
 
 # --- Waitlist to Court Assignment ---
 st.markdown("---")
