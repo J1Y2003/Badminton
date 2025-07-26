@@ -1,4 +1,5 @@
 import streamlit as st
+import re
 
 # Initialize state
 if "players" not in st.session_state:
@@ -35,6 +36,30 @@ if st.sidebar.button("추가", key="sidebar_add") and name:
         st.session_state.players.add(name)
         st.sidebar.success(f"{name}님 명단에 추가되었습니다.")
     st.rerun()
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Paste player names")
+
+raw_names_input = st.sidebar.text_area("Paste names separated by spaces or newlines", key="bulk_name_input")
+
+if st.sidebar.button("여러 명 자동 추가하기", key="bulk_add_button") and raw_names_input.strip():
+    # Split by any combination of space, tab, or line break
+    names = re.split(r"[ \n\r\t]+", raw_names_input.strip())
+    added_names = []
+    in_use = set(p for court in st.session_state.courts.values() for p in court)
+    in_waitlist = set(p for team in st.session_state.waitlist for p in team)
+    
+    for name in names:
+        name = name.strip()
+        if name and name not in st.session_state.players and name not in in_use and name not in in_waitlist:
+            st.session_state.players.add(name)
+            added_names.append(name)
+    
+    if added_names:
+        st.sidebar.success(f"✅ Added: {', '.join(added_names)}")
+        st.rerun()
+    else:
+        st.sidebar.warning("⚠️ No new names were added (they may already exist).")
 
 # --- Sidebar: Removable Free Players ---
 if st.session_state.players:
@@ -119,7 +144,7 @@ with right_col:
             st.success(f"{new_team}을(를) 대기열에 추가하였습니다.")
             st.rerun()
         else:
-            st.warning("4인을 정확히 선택하셔야 합니다.")
+            st.warning("정확히 4인을 선택하셔야 합니다.")
     free_players = sorted(list(st.session_state.players))
     if free_players:
         rows = [free_players[i:i+3] for i in range(0, len(free_players), 3)]
