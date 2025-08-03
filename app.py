@@ -25,7 +25,7 @@ add_court = st.sidebar.button("➕ 코트 추가")
 remove_court = st.sidebar.button("➖ 코트 제거")
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("명단에 추가")
+st.sidebar.subheader("인원 추가")
 name = st.sidebar.text_input("이름 입력", key="sidebar_name")
 if st.sidebar.button("추가", key="sidebar_add") and name:
     in_use = set(p for court in st.session_state.courts.values() for p in court)
@@ -38,11 +38,11 @@ if st.sidebar.button("추가", key="sidebar_add") and name:
     st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Paste player names")
+st.sidebar.subheader("인원 일괄 추가")
 
-raw_names_input = st.sidebar.text_area("Paste names separated by spaces or newlines", key="bulk_name_input")
+raw_names_input = st.sidebar.text_area("줄바꿈 또는 띄어쓰기로 구분하여 작성해 주세요", key="bulk_name_input")
 
-if st.sidebar.button("여러 명 자동 추가하기", key="bulk_add_button") and raw_names_input.strip():
+if st.sidebar.button("추가", key="bulk_add_button") and raw_names_input.strip():
     # Split by any combination of space, tab, or line break
     names = re.split(r"[ \n\r\t]+", raw_names_input.strip())
     added_names = []
